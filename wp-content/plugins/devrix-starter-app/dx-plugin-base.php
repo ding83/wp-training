@@ -475,6 +475,7 @@ function cust_event_posttype() {
 			'capability_type' => 'post',
 			'rewrite' => array("slug" => "students"), // Permalinks format
 			'menu_position' => 5,
+			'has_archive' => true,
 			'register_meta_box_cb' => 'add_students_metaboxes'
 		)
 	);
@@ -482,7 +483,7 @@ function cust_event_posttype() {
 add_action( 'init', 'cust_event_posttype' );
 
 function add_students_metaboxes() {
-	add_meta_box('student_info', 'Student Info', 'student_info', 'students', 'normal', 'default');
+	add_meta_box('student_info_extras', 'Student Info', 'student_info_extras', 'students', 'normal', 'default');
 }
 
 function student_info() {

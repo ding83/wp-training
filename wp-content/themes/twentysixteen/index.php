@@ -54,7 +54,6 @@ get_header(); ?>
 
 		endif;
 		?>
-
 		</main><!-- .site-main -->
 	</div><!-- .content-area -->
 
