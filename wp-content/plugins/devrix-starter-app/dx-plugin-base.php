@@ -539,3 +539,28 @@ function save_student_meta($post_id, $post) {
 }
 add_action('save_post', 'save_student_meta', 1, 2);
 
+//REST
+function register_wp_api() {
+	register_rest_route( 'api', '/get/allstudents', array(
+        'methods' => 'POST',
+        'callback' => 'api_callback',
+    ));
+}
+add_action( 'rest_api_init', 'register_wp_api' );
+
+function api_callback( $request_data ) {
+	$r = array();
+	$parameters = $request_data->get_params();
+	$args = array('post_type' => 'students', 'post_status' => 'publish');
+	$loop = new WP_Query( $args );
+
+	while ( $loop->have_posts() ) : $loop->the_post();
+		$r[] = array(
+				'name' => get_the_title(),
+				'description' => get_the_content()
+			);
+	endwhile;
+	return $r;
+}
+
+
