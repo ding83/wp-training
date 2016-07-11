@@ -486,6 +486,55 @@ function add_students_metaboxes() {
 }
 
 function student_info() {
-	
+	global $post;
+	echo '<p><label for="_studentClassInfo">Course</label></p>';
+	// Noncename needed to verify where the data originated
+	echo '<input type="hidden" name="studentmeta_noncename" id="studentmeta_noncename" value="' . wp_create_nonce( plugin_basename(__FILE__) ) . '" />';
+	// Get the location data if its already been entered
+	$student = get_post_meta($post->ID, '_studentCourse', true);
+	// Echo out the field
+	echo '<input type="text" id="_studentClassInfo" name="_studentCourse" value="' . $student  . '" class="widefat" />';
 }
+
+function student_info_extras() {
+	global $post;
+	// Noncename needed to verify where the data originated
+	echo '<input type="hidden" name="studentmeta_noncename" id="studentmeta_noncename" value="'.wp_create_nonce( plugin_basename(__FILE__) ) . '" />';
+	
+	// Get the data if its already been entered
+	$course = get_post_meta($post->ID, '_studentCourse', true);
+	$major = get_post_meta($post->ID, '_studentMajor', true);
+	
+	// Echo out the field
+	echo '<p>Course:</p>';
+	echo '<input type="text" name="_location" value="' . $course  . '" class="widefat" />';
+    echo '<p>Major:</p>';
+    echo '<input type="text" name="_dresscode" value="' . $major  . '" class="widefat" />';
+
+}
+
+// Save the Metabox Data
+function save_student_meta($post_id, $post) {
+	if ( !wp_verify_nonce( $_POST['studentmeta_noncename'], plugin_basename(__FILE__) )) {
+		return $post->ID;
+	}
+
+	if ( !current_user_can( 'edit_post', $post->ID ))
+		return $post->ID;
+	
+	$events_meta['_studentCourse'] = $_POST['_studentCourse'];
+	// $events_meta['_studentMajor'] = $_POST['_studentMajor'];
+	foreach ($events_meta as $key => $value) {
+		if( $post->post_type == 'revision' ) return;
+		$value = implode(',', (array)$value);
+		if(get_post_meta($post->ID, $key, FALSE)) { 
+			update_post_meta($post->ID, $key, $value);
+		} else {
+			add_post_meta($post->ID, $key, $value);
+		}
+		if(!$value) delete_post_meta($post->ID, $key);
+	}
+
+}
+add_action('save_post', 'save_student_meta', 1, 2);
 
