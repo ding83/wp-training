@@ -563,4 +563,24 @@ function api_callback( $request_data ) {
 	return $r;
 }
 
+function random_student() {
+	$args = array( 
+		'post_type' => 'students', 
+		'post_status' => 'publish',
+		'posts_per_page' => 1,
+		'orderby' => 'rand'
+	);
+	$loop = new WP_Query( $args );
+	while ( $loop->have_posts() ) : $loop->the_post();
+?>
+	<div>
+		<h2><?php the_title(); ?></h2>
+		<p><?php the_content(); ?></p>
+	</div>
+<?php
+	endwhile;
+}
+add_shortcode('student', 'random_student');
+?>
+
 
