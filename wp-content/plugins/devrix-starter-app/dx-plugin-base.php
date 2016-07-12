@@ -1,5 +1,4 @@
 <?php
-define( 'WP_DEBUG', true );
 /**
  * Plugin Name: DX Plugin Base
  * Description: A plugin framework for building new WordPress plugins reusing the accepted APIs and best practices
@@ -37,6 +36,7 @@ define( 'DXP_PATH_INCLUDES', dirname( __FILE__ ) . '/inc' );
 define( 'DXP_FOLDER', basename( DXP_PATH ) );
 define( 'DXP_URL', plugins_url() . '/' . DXP_FOLDER );
 define( 'DXP_URL_INCLUDES', DXP_URL . '/inc' );
+define( 'WP_DEBUG', true );
 
 
 /**
@@ -613,10 +613,6 @@ function get_student_callback( $request_data ) {
 	$parameters = $request_data->get_params();
 	return $parameters;
 }
-
-
-
-
 
 function random_student() {
 	$args = array( 
