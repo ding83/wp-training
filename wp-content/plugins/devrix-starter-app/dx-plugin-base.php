@@ -1,4 +1,5 @@
 <?php
+define( 'WP_DEBUG', true );
 /**
  * Plugin Name: DX Plugin Base
  * Description: A plugin framework for building new WordPress plugins reusing the accepted APIs and best practices
@@ -486,35 +487,26 @@ function add_students_metaboxes() {
 	add_meta_box('student_info_extras', 'Student Info', 'student_info_extras', 'students', 'normal', 'default');
 }
 
-function student_info() {
-	global $post;
-	echo '<p><label for="_studentClassInfo">Course</label></p>';
-	// Noncename needed to verify where the data originated
-	echo '<input type="hidden" name="studentmeta_noncename" id="studentmeta_noncename" value="' . wp_create_nonce( plugin_basename(__FILE__) ) . '" />';
-	// Get the location data if its already been entered
-	$student = get_post_meta($post->ID, '_studentCourse', true);
-	// Echo out the field
-	echo '<input type="text" id="_studentClassInfo" name="_studentCourse" value="' . $student  . '" class="widefat" />';
-}
-
 function student_info_extras() {
 	global $post;
 	// Noncename needed to verify where the data originated
-	echo '<input type="hidden" name="studentmeta_noncename" id="studentmeta_noncename" value="'.wp_create_nonce( plugin_basename(__FILE__) ) . '" />';
-	
-	// Get the data if its already been entered
-	$course = get_post_meta($post->ID, '_studentCourse', true);
-	$major = get_post_meta($post->ID, '_studentMajor', true);
-	
-	// Echo out the field
-	echo '<p>Course:</p>';
-	echo '<input type="text" name="_location" value="' . $course  . '" class="widefat" />';
-    echo '<p>Major:</p>';
-    echo '<input type="text" name="_dresscode" value="' . $major  . '" class="widefat" />';
+	echo '<input type="hidden" name="studentmeta_noncename" value="'.wp_create_nonce( plugin_basename(__FILE__) ) . '" />';
 
+	$year = get_post_meta($post->ID, '_studentYear', true);
+	$section = get_post_meta($post->ID, '_studentSection', true);
+	$address = get_post_meta($post->ID, '_studentAddress', true);
+	$student_id = get_post_meta($post->ID, '_studentID', true);
+
+	echo '<p>Student Year:</p>';
+	echo '<input type="text" name="_studentYear" value="' . $year  . '" class="widefat" />';
+    echo '<p>Student Section:</p>';
+    echo '<input type="text" name="_studentSection" value="' . $section  . '" class="widefat" />';
+    echo '<p>Student Address:</p>';
+    echo '<textarea name="_studentAddress" class="widefat">' . $address . '</textarea>';
+    echo '<p>Student ID:</p>';
+    echo '<input type="text" name="_studentID" value="' . $student_id  . '" class="widefat" />';
 }
 
-// Save the Metabox Data
 function save_student_meta($post_id, $post) {
 	if ( !wp_verify_nonce( $_POST['studentmeta_noncename'], plugin_basename(__FILE__) )) {
 		return $post->ID;
@@ -523,8 +515,11 @@ function save_student_meta($post_id, $post) {
 	if ( !current_user_can( 'edit_post', $post->ID ))
 		return $post->ID;
 	
-	$events_meta['_studentCourse'] = $_POST['_studentCourse'];
-	// $events_meta['_studentMajor'] = $_POST['_studentMajor'];
+	$events_meta['_studentYear'] = $_POST['_studentYear'];
+	$events_meta['_studentSection'] = $_POST['_studentSection'];
+	$events_meta['_studentAddress'] = $_POST['_studentAddress'];
+	$events_meta['_studentID'] = $_POST['_studentID'];
+
 	foreach ($events_meta as $key => $value) {
 		if( $post->post_type == 'revision' ) return;
 		$value = implode(',', (array)$value);
@@ -535,20 +530,19 @@ function save_student_meta($post_id, $post) {
 		}
 		if(!$value) delete_post_meta($post->ID, $key);
 	}
-
 }
 add_action('save_post', 'save_student_meta', 1, 2);
 
-//REST
-function register_wp_api() {
+//REST all
+function wpt_all_student() {
 	register_rest_route( 'api', '/get/allstudents', array(
-        'methods' => 'POST',
-        'callback' => 'api_callback',
+        'methods' => 'GET',
+        'callback' => 'all_student_callback',
     ));
 }
-add_action( 'rest_api_init', 'register_wp_api' );
+add_action( 'rest_api_init', 'wpt_all_student' );
 
-function api_callback( $request_data ) {
+function all_student_callback( $request_data ) {
 	$r = array();
 	$parameters = $request_data->get_params();
 	$args = array('post_type' => 'students', 'post_status' => 'publish');
@@ -562,6 +556,67 @@ function api_callback( $request_data ) {
 	endwhile;
 	return $r;
 }
+
+//rest add
+function wpt_add_student() {
+	register_rest_route( 'api', '/get/addstudent', array(
+        'methods' => 'GET',
+        'callback' => 'add_student_callback',
+    ));
+}
+add_action( 'rest_api_init', 'wpt_add_student' );
+
+function add_student_callback( $request_data ) {
+	$parameters = $request_data->get_params();
+	return $parameters;
+}
+
+//rest edit
+function wpt_edit_student() {
+	register_rest_route( 'api', '/get/editstudent', array(
+        'methods' => 'GET',
+        'callback' => 'edit_student_callback',
+    ));
+}
+add_action( 'rest_api_init', 'wpt_edit_student' );
+
+function edit_student_callback( $request_data ) {
+	$parameters = $request_data->get_params();
+	return $parameters;
+}
+
+
+//rest delete
+function wpt_delete_student() {
+	register_rest_route( 'api', '/get/deletestudent', array(
+        'methods' => 'GET',
+        'callback' => 'delete_student_callback',
+    ));
+}
+add_action( 'rest_api_init', 'wpt_delete_student' );
+
+function delete_student_callback( $request_data ) {
+	$parameters = $request_data->get_params();
+	return $parameters;
+}
+
+//rest delete
+function wpt_get_student() {
+	register_rest_route( 'api', '/get/student', array(
+        'methods' => 'GET',
+        'callback' => 'get_student_callback',
+    ));
+}
+add_action( 'rest_api_init', 'wpt_get_student' );
+
+function get_student_callback( $request_data ) {
+	$parameters = $request_data->get_params();
+	return $parameters;
+}
+
+
+
+
 
 function random_student() {
 	$args = array( 
