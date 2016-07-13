@@ -36,7 +36,7 @@ define( 'DXP_PATH_INCLUDES', dirname( __FILE__ ) . '/inc' );
 define( 'DXP_FOLDER', basename( DXP_PATH ) );
 define( 'DXP_URL', plugins_url() . '/' . DXP_FOLDER );
 define( 'DXP_URL_INCLUDES', DXP_URL . '/inc' );
-define( 'WP_DEBUG', true );
+
 
 
 /**
@@ -508,17 +508,17 @@ function student_info_extras() {
 }
 
 function save_student_meta($post_id, $post) {
-	if ( !wp_verify_nonce( $_POST['studentmeta_noncename'], plugin_basename(__FILE__) )) {
+	if ( isset($_POST['studentmeta_noncename']) && !wp_verify_nonce( $_POST['studentmeta_noncename'], plugin_basename(__FILE__) )) {
 		return $post->ID;
 	}
 
 	if ( !current_user_can( 'edit_post', $post->ID ))
 		return $post->ID;
 	
-	$events_meta['_studentYear'] = $_POST['_studentYear'];
-	$events_meta['_studentSection'] = $_POST['_studentSection'];
-	$events_meta['_studentAddress'] = $_POST['_studentAddress'];
-	$events_meta['_studentID'] = $_POST['_studentID'];
+	$events_meta['_studentYear'] = isset($_POST['_studentYear']) ? $_POST['_studentYear'] : '';
+	$events_meta['_studentSection'] = isset($_POST['_studentSection']) ? $_POST['_studentSection'] : '';
+	$events_meta['_studentAddress'] = isset($_POST['_studentAddress']) ? $_POST['_studentAddress'] : '';
+	$events_meta['_studentID'] = isset($_POST['_studentID']) ? $_POST['_studentID'] : '';
 
 	foreach ($events_meta as $key => $value) {
 		if( $post->post_type == 'revision' ) return;
