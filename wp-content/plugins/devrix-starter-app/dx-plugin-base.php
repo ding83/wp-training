@@ -515,14 +515,14 @@ function save_student_meta($post_id, $post) {
 	if ( !current_user_can( 'edit_post', $post->ID ))
 		return $post->ID;
 	
-	$events_meta['_studentYear'] = isset($_POST['_studentYear']) ? $_POST['_studentYear'] : '';
-	$events_meta['_studentSection'] = isset($_POST['_studentSection']) ? $_POST['_studentSection'] : '';
-	$events_meta['_studentAddress'] = isset($_POST['_studentAddress']) ? $_POST['_studentAddress'] : '';
-	$events_meta['_studentID'] = isset($_POST['_studentID']) ? $_POST['_studentID'] : '';
+	$student_meta['_studentYear'] = isset($_POST['_studentYear']) ? $_POST['_studentYear'] : '';
+	$student_meta['_studentSection'] = isset($_POST['_studentSection']) ? $_POST['_studentSection'] : '';
+	$student_meta['_studentAddress'] = isset($_POST['_studentAddress']) ? $_POST['_studentAddress'] : '';
+	$student_meta['_studentID'] = isset($_POST['_studentID']) ? $_POST['_studentID'] : '';
 
-	foreach ($events_meta as $key => $value) {
+	foreach ($student_meta as $key => $value) {
 		if( $post->post_type == 'revision' ) return;
-		$value = implode(',', (array)$value);
+			$value = implode(',', (array)$value);
 		if(get_post_meta($post->ID, $key, FALSE)) { 
 			update_post_meta($post->ID, $key, $value);
 		} else {
@@ -550,16 +550,26 @@ function all_student_callback( $request_data ) {
 
 	while ( $loop->have_posts() ) : $loop->the_post();
 		$r[] = array(
-				'post_id' => get_the_ID(),
-				'name' => get_the_title(),
-				'description' => get_the_content(),
-				'student_year' => get_post_meta(get_the_ID(), '_studentYear', true),
-				'student_section' => get_post_meta(get_the_ID(), '_studentSection', true),
-				'student_address' => get_post_meta(get_the_ID(), '_studentAddress', true),
-				'student_id' => get_post_meta(get_the_ID(), '_studentID', true)
-			);
+			'post_id' => get_the_ID(),
+			'name' => get_the_title(),
+			'description' => get_the_content(),
+			'student_year' => get_post_meta(get_the_ID(), '_studentYear', true),
+			'student_section' => get_post_meta(get_the_ID(), '_studentSection', true),
+			'student_address' => get_post_meta(get_the_ID(), '_studentAddress', true),
+			'student_id' => get_post_meta(get_the_ID(), '_studentID', true)
+		);
 	endwhile;
 	return $r;
+}
+
+function meta_data($post_id, $field, $value = '') {
+	if (empty( $value ) || !$value) {
+		delete_post_meta( $post_id, $field );
+	} elseif (!get_post_meta($post_id, $field)) {
+		add_post_meta($post_id, $field, $value);
+	} else {
+		update_post_meta($post_id, $field, $value);
+	}
 }
 
 //rest add
@@ -572,8 +582,29 @@ function wpt_add_student() {
 add_action( 'rest_api_init', 'wpt_add_student' );
 
 function add_student_callback( $request_data ) {
+	$j['status'] = 'fail';
 	$parameters = $request_data->get_params();
-	return $parameters;
+	$student_meta['_studentYear'] = isset($parameters['year']) ? $parameters['year'] : '';
+	$student_meta['_studentSection'] = isset($parameters['section']) ? $parameters['section'] : '';
+	$student_meta['_studentAddress'] = isset($parameters['address']) ? $parameters['address'] : '';
+	$student_meta['_studentID'] = isset($parameters['sid']) ? $parameters['sid'] : '';
+
+	if (isset($parameters['title']) && isset($parameters['content'])) {
+		$post = array(
+			'post_title' => $parameters['title'],
+			'post_content' => $parameters['content'],
+			'post_status' => 'publish',
+			'post_type' => 'students'
+		);
+		$post_id = wp_insert_post($post);
+		if ($post_id) {
+			foreach ($student_meta as $key => $value) {
+				meta_data($post_id, $key, $value);
+			}
+			$j['status'] = 'success';
+		}
+	}
+	return $j;
 }
 
 //rest edit
@@ -586,10 +617,47 @@ function wpt_edit_student() {
 add_action( 'rest_api_init', 'wpt_edit_student' );
 
 function edit_student_callback( $request_data ) {
+	$j['status'] = 'fail';
 	$parameters = $request_data->get_params();
-	return $parameters;
-}
+	$student_meta = array();
 
+	if (isset($parameters['post_id'])) {
+		if (isset($parameters['year']))
+			$student_meta['_studentYear'] = $parameters['year'];
+
+		if (isset($parameters['section']))
+			$student_meta['_studentSection'] = $parameters['section'];
+
+		if (isset($parameters['address']))
+			$student_meta['_studentAddress'] = $parameters['address'];
+
+		if (isset($parameters['sid']))
+			$student_meta['_studentID'] = $parameters['sid'];
+
+		if (isset($parameters['title']) && isset($parameters['content'])) {
+			$post = array(
+				'ID' => $parameters['post_id'],
+				'post_title' => $parameters['title'],
+				'post_content' => $parameters['content'],
+				'post_status' => 'publish',
+				'post_type' => 'students'
+			);
+
+			$post_id = wp_insert_post($post);
+			if ($post_id) {
+				$j['status'] = 'success';
+				if (!empty($student_meta)) {
+					foreach ($student_meta as $key => $value) {
+						meta_data($post_id, $key, $value);
+					}
+				}
+			}
+		}
+	} else {
+		$j['xmessage'] = 'bad request';
+	}
+	return $j;
+}
 
 //rest delete
 function wpt_delete_student() {
@@ -601,8 +669,25 @@ function wpt_delete_student() {
 add_action( 'rest_api_init', 'wpt_delete_student' );
 
 function delete_student_callback( $request_data ) {
+	$j['status'] = 'fail';
 	$parameters = $request_data->get_params();
-	return $parameters;
+	$student_meta = array(
+		'_studentYear',
+		'_studentSection',
+		'_studentAddress',
+		'_studentID'
+	);
+
+	if (isset($parameters['post_id'])) {
+		$deleted = wp_delete_post($parameters['post_id'], true);
+		if ($deleted) {
+			$j['status'] = 'success';
+			for ($i=0; $i < count($student_meta); $i++) {
+				meta_data($parameters['post_id'], $student_meta[$i]);
+			}
+		}
+	}
+	return $j;
 }
 
 //rest get by id
@@ -615,8 +700,24 @@ function wpt_get_student() {
 add_action( 'rest_api_init', 'wpt_get_student' );
 
 function get_student_callback( $request_data ) {
+	$j['status'] = 'fail';
 	$parameters = $request_data->get_params();
-	return $parameters;
+	if (isset($parameters['post_id'])) {
+		$post = get_post($parameters['post_id']);
+		if ($post) {
+			$j['status'] = 'success';
+			$j['data'] = array(
+				'post_id' => $post->ID,
+				'name' => $post->post_title,
+				'description' => $post->post_content,
+				'student_year' => get_post_meta($post->ID, '_studentYear', true),
+				'student_section' => get_post_meta($post->ID, '_studentSection', true),
+				'student_address' => get_post_meta($post->ID, '_studentAddress', true),
+				'student_id' => get_post_meta($post->ID, '_studentID', true)
+			);
+		}
+	}
+	return $j;
 }
 
 function shortcode_student() {
