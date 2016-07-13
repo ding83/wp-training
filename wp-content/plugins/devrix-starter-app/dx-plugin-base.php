@@ -550,8 +550,13 @@ function all_student_callback( $request_data ) {
 
 	while ( $loop->have_posts() ) : $loop->the_post();
 		$r[] = array(
+				'post_id' => get_the_ID(),
 				'name' => get_the_title(),
-				'description' => get_the_content()
+				'description' => get_the_content(),
+				'student_year' => get_post_meta(get_the_ID(), '_studentYear', true),
+				'student_section' => get_post_meta(get_the_ID(), '_studentSection', true),
+				'student_address' => get_post_meta(get_the_ID(), '_studentAddress', true),
+				'student_id' => get_post_meta(get_the_ID(), '_studentID', true)
 			);
 	endwhile;
 	return $r;
@@ -600,7 +605,7 @@ function delete_student_callback( $request_data ) {
 	return $parameters;
 }
 
-//rest delete
+//rest get by id
 function wpt_get_student() {
 	register_rest_route( 'api', '/get/student', array(
         'methods' => 'GET',
@@ -614,12 +619,11 @@ function get_student_callback( $request_data ) {
 	return $parameters;
 }
 
-function random_student() {
+function shortcode_student() {
 	$args = array( 
 		'post_type' => 'students', 
 		'post_status' => 'publish',
-		'posts_per_page' => 1,
-		'orderby' => 'rand'
+		'posts_per_page' => -1
 	);
 	$loop = new WP_Query( $args );
 	while ( $loop->have_posts() ) : $loop->the_post();
@@ -627,11 +631,29 @@ function random_student() {
 	<div>
 		<h2><?php the_title(); ?></h2>
 		<p><?php the_content(); ?></p>
+		<table>
+			<tr>
+				<td>Year</td>
+				<td><?php echo get_post_meta(get_the_ID(), '_studentYear', true); ?></td>
+			</tr>
+			<tr>
+				<td>Section</td>
+				<td><?php echo get_post_meta(get_the_ID(), '_studentSection', true); ?></td>
+			</tr>
+			<tr>
+				<td>Address</td>
+				<td><?php echo get_post_meta(get_the_ID(), '_studentAddress', true); ?></td>
+			</tr>
+			<tr>
+				<td>Student ID</td>
+				<td><?php echo get_post_meta(get_the_ID(), '_studentID', true); ?></td>
+			</tr>
+		</table>
 	</div>
 <?php
 	endwhile;
 }
-add_shortcode('student', 'random_student');
+add_shortcode('student', 'shortcode_student');
 
 
 class StudentWidget extends WP_Widget{
