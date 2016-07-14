@@ -574,8 +574,8 @@ function meta_data($post_id, $field, $value = '') {
 
 //rest add
 function wpt_add_student() {
-	register_rest_route( 'api', '/get/addstudent', array(
-        'methods' => 'GET',
+	register_rest_route( 'api', '/addstudent', array(
+        'methods' => 'POST',
         'callback' => 'add_student_callback',
     ));
 }
@@ -609,8 +609,8 @@ function add_student_callback( $request_data ) {
 
 //rest edit
 function wpt_edit_student() {
-	register_rest_route( 'api', '/get/editstudent', array(
-        'methods' => 'GET',
+	register_rest_route( 'api', '/editstudent', array(
+        'methods' => 'POST',
         'callback' => 'edit_student_callback',
     ));
 }
@@ -661,7 +661,7 @@ function edit_student_callback( $request_data ) {
 
 //rest delete
 function wpt_delete_student() {
-	register_rest_route( 'api', '/get/deletestudent', array(
+	register_rest_route( 'api', '/deletestudent', array(
         'methods' => 'GET',
         'callback' => 'delete_student_callback',
     ));
