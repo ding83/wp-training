@@ -589,10 +589,10 @@ function add_student_callback( $request_data ) {
 	$student_meta['_studentAddress'] = isset($parameters['address']) ? $parameters['address'] : '';
 	$student_meta['_studentID'] = isset($parameters['sid']) ? $parameters['sid'] : '';
 
-	if (isset($parameters['title']) && isset($parameters['content'])) {
+	if (isset($parameters['title'])) {
 		$post = array(
 			'post_title' => $parameters['title'],
-			'post_content' => $parameters['content'],
+			'post_content' => isset($parameters['content']) ? isset($parameters['content']) : '',
 			'post_status' => 'publish',
 			'post_type' => 'students'
 		);
@@ -609,7 +609,7 @@ function add_student_callback( $request_data ) {
 
 //rest edit
 function wpt_edit_student() {
-	register_rest_route( 'api', '/editstudent', array(
+	register_rest_route( 'api', '/editstudent/(?P<id>[\d]+)', array(
         'methods' => 'POST',
         'callback' => 'edit_student_callback',
     ));
@@ -621,7 +621,7 @@ function edit_student_callback( $request_data ) {
 	$parameters = $request_data->get_params();
 	$student_meta = array();
 
-	if (isset($parameters['post_id'])) {
+	if (isset($parameters['id'])) {
 		if (isset($parameters['year']))
 			$student_meta['_studentYear'] = $parameters['year'];
 
@@ -634,11 +634,11 @@ function edit_student_callback( $request_data ) {
 		if (isset($parameters['sid']))
 			$student_meta['_studentID'] = $parameters['sid'];
 
-		if (isset($parameters['title']) && isset($parameters['content'])) {
+		if (isset($parameters['title'])) {
 			$post = array(
-				'ID' => $parameters['post_id'],
+				'ID' => $parameters['id'],
 				'post_title' => $parameters['title'],
-				'post_content' => $parameters['content'],
+				'post_content' => isset($parameters['content']) ? $parameters['content'] : '',
 				'post_status' => 'publish',
 				'post_type' => 'students'
 			);
@@ -654,15 +654,15 @@ function edit_student_callback( $request_data ) {
 			}
 		}
 	} else {
-		$j['xmessage'] = 'bad request';
+		$j['xmessage'] = 'bad request. ID is required';
 	}
 	return $j;
 }
 
 //rest delete
 function wpt_delete_student() {
-	register_rest_route( 'api', '/deletestudent', array(
-        'methods' => 'GET',
+	register_rest_route( 'api', '/deletestudent/(?P<id>[\d]+)', array(
+        'methods' => 'DELETE',
         'callback' => 'delete_student_callback',
     ));
 }
@@ -678,12 +678,12 @@ function delete_student_callback( $request_data ) {
 		'_studentID'
 	);
 
-	if (isset($parameters['post_id'])) {
-		$deleted = wp_delete_post($parameters['post_id'], true);
+	if (isset($parameters['id'])) {
+		$deleted = wp_delete_post($parameters['id'], true);
 		if ($deleted) {
 			$j['status'] = 'success';
 			for ($i=0; $i < count($student_meta); $i++) {
-				meta_data($parameters['post_id'], $student_meta[$i]);
+				meta_data($parameters['id'], $student_meta[$i]);
 			}
 		}
 	}
@@ -692,7 +692,7 @@ function delete_student_callback( $request_data ) {
 
 //rest get by id
 function wpt_get_student() {
-	register_rest_route( 'api', '/get/student', array(
+	register_rest_route( 'api', '/student/(?P<id>[\d]+)', array(
         'methods' => 'GET',
         'callback' => 'get_student_callback',
     ));
@@ -702,12 +702,12 @@ add_action( 'rest_api_init', 'wpt_get_student' );
 function get_student_callback( $request_data ) {
 	$j['status'] = 'fail';
 	$parameters = $request_data->get_params();
-	if (isset($parameters['post_id'])) {
-		$post = get_post($parameters['post_id']);
+	if (isset($parameters['id'])) {
+		$post = get_post($parameters['id']);
 		if ($post) {
 			$j['status'] = 'success';
 			$j['data'] = array(
-				'post_id' => $post->ID,
+				'id' => $post->ID,
 				'name' => $post->post_title,
 				'description' => $post->post_content,
 				'student_year' => get_post_meta($post->ID, '_studentYear', true),
